@@ -1,0 +1,6 @@
+{
+  "name": "Budget Familial",
+  "description": "Gestion complète des finances familiales : revenus, dépenses, budgets, factures, épargne, dettes, rapports et assistant budgétaire.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

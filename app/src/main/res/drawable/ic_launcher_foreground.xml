@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Golden circular shield base inside 66dp safe zone (21 to 87) -->
+    <path
+        android:pathData="M54,26 C69.46,26 82,38.54 82,54 C82,69.46 69.46,82 54,82 C38.54,82 26,69.46 26,54 C26,38.54 38.54,26 54,26 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="26"
+                android:startY="26"
+                android:endX="82"
+                android:endY="82"
+                android:type="linear">
+                <item android:color="#FFE082" android:offset="0.0" />
+                <item android:color="#FFB300" android:offset="0.5" />
+                <item android:color="#FF8F00" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Inner coin ring -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.5"
+        android:strokeAlpha="0.6"
+        android:pathData="M54,30 C67.25,30 78,40.75 78,54 C78,67.25 67.25,78 54,78 C40.75,78 30,67.25 30,54 C30,40.75 40.75,30 54,30 Z" />
+
+    <!-- Family House & Heart & Currency silhouette in pure white -->
+    <!-- House roof -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,36 L68,48 L64,48 L64,66 L44,66 L44,48 L40,48 Z" />
+
+    <!-- Family silhouette inside house -->
+    <path
+        android:fillColor="#1565C0"
+        android:pathData="M54,49 C56.2,49 58,47.2 58,45 C58,42.8 56.2,41 54,41 C51.8,41 50,42.8 50,45 C50,47.2 51.8,49 54,49 Z M54,52 C50.7,52 46,53.7 46,57 L46,64 L62,64 L62,57 C62,53.7 57.3,52 54,52 Z" />
+
+    <!-- Small Golden Currency Badge on lower right -->
+    <path
+        android:fillColor="#2E7D32"
+        android:pathData="M66,62 C69.3,62 72,64.7 72,68 C72,71.3 69.3,74 66,74 C62.7,74 60,71.3 60,68 C60,64.7 62.7,62 66,62 Z" />
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M66.8,64 L65.5,64 L65.5,65.2 C64.6,65.4 64,66.1 64,67 C64,68.2 65.1,68.6 65.9,68.9 C66.8,69.2 67.2,69.6 67.2,70.1 C67.2,70.7 66.7,71.1 66,71.1 C65.3,71.1 64.7,70.7 64.6,70.2 L63.6,70.2 C63.7,71.1 64.5,71.8 65.5,72 L65.5,73 L66.8,73 L66.8,72 C67.7,71.8 68.4,71.1 68.4,70.1 C68.4,68.8 67.3,68.3 66.4,68 C65.6,67.7 65.2,67.3 65.2,66.8 C65.2,66.3 65.6,65.9 66.3,65.9 C66.9,65.9 67.4,66.2 67.5,66.7 L68.5,66.7 C68.4,65.9 67.7,65.2 66.8,65.1 Z" />
+</vector>
