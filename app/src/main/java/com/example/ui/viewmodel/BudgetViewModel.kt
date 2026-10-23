@@ -205,6 +205,12 @@ class BudgetViewModel(
         }
     }
 
+    fun updateTransaction(transaction: Transaction) {
+        viewModelScope.launch {
+            repository.updateTransaction(transaction)
+        }
+    }
+
     fun addOrUpdateBudgetCategory(categoryId: Long, categoryName: String, amount: Double) {
         viewModelScope.launch {
             val item = BudgetCategory(
@@ -217,6 +223,12 @@ class BudgetViewModel(
         }
     }
 
+    fun deleteBudgetCategoryByCategoryId(categoryId: Long) {
+        viewModelScope.launch {
+            repository.deleteBudgetCategoryByCategoryId(_selectedMonthYear.value, categoryId)
+        }
+    }
+
     fun deleteBudgetCategory(budgetCategory: BudgetCategory) {
         viewModelScope.launch {
             repository.clearBudgetForMonth(_selectedMonthYear.value)
@@ -226,6 +238,12 @@ class BudgetViewModel(
     fun addBill(bill: Bill) {
         viewModelScope.launch {
             repository.insertBill(bill)
+        }
+    }
+
+    fun updateBill(bill: Bill) {
+        viewModelScope.launch {
+            repository.updateBill(bill)
         }
     }
 
@@ -244,6 +262,12 @@ class BudgetViewModel(
     fun addSavingsGoal(goal: SavingsGoal) {
         viewModelScope.launch {
             repository.insertGoal(goal)
+        }
+    }
+
+    fun updateSavingsGoal(goal: SavingsGoal) {
+        viewModelScope.launch {
+            repository.updateGoal(goal)
         }
     }
 

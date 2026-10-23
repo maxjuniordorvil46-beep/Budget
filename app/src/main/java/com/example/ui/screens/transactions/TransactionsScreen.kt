@@ -47,8 +47,13 @@ fun TransactionsScreen(
     val transactions by viewModel.transactions.collectAsStateWithLifecycle()
     val currencySymbol by viewModel.currencySymbol.collectAsStateWithLifecycle()
 
+    val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val accounts by viewModel.accounts.collectAsStateWithLifecycle()
+    val members by viewModel.members.collectAsStateWithLifecycle()
+
     var selectedTypeFilter by remember { mutableStateOf<TransactionType?>(null) }
     var searchQuery by remember { mutableStateOf("") }
+    var transactionToEdit by remember { mutableStateOf<com.example.data.model.Transaction?>(null) }
 
     val filteredList = transactions.filter { tx ->
         val matchesType = selectedTypeFilter == null || tx.type == selectedTypeFilter
@@ -176,6 +181,7 @@ fun TransactionsScreen(
                         TransactionItemRow(
                             transaction = tx,
                             currencySymbol = currencySymbol,
+                            onEdit = { transactionToEdit = tx },
                             onDelete = { viewModel.deleteTransaction(tx) }
                         )
                     }
@@ -191,6 +197,20 @@ fun TransactionsScreen(
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
                 .testTag("fab_add_tx_screen")
+        )
+    }
+
+    transactionToEdit?.let { tx ->
+        com.example.ui.components.AddEditTransactionDialog(
+            initialTransaction = tx,
+            categories = categories,
+            accounts = accounts,
+            members = members,
+            onDismiss = { transactionToEdit = null },
+            onConfirm = { updatedTx ->
+                viewModel.updateTransaction(updatedTx)
+                transactionToEdit = null
+            }
         )
     }
 }

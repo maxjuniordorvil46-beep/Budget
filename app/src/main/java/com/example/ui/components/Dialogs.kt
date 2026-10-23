@@ -14,6 +14,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -33,6 +34,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.data.model.Account
 import com.example.data.model.Bill
+import com.example.data.model.BillFrequency
 import com.example.data.model.Category
 import com.example.data.model.Debt
 import com.example.data.model.HouseholdMember
@@ -41,24 +43,31 @@ import com.example.data.model.Transaction
 import com.example.data.model.TransactionType
 
 @Composable
-fun AddTransactionDialog(
+fun AddEditTransactionDialog(
+    initialTransaction: Transaction? = null,
     categories: List<Category>,
     accounts: List<Account>,
     members: List<HouseholdMember>,
     onDismiss: () -> Unit,
     onConfirm: (Transaction) -> Unit
 ) {
-    var type by remember { mutableStateOf(TransactionType.EXPENSE) }
-    var amountText by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf(categories.firstOrNull { it.type == type }?.name ?: "Courses alimentaires") }
-    var selectedAccountId by remember { mutableStateOf(accounts.firstOrNull()?.id ?: 1L) }
-    var selectedTargetAccountId by remember { mutableStateOf(accounts.getOrNull(1)?.id ?: 2L) }
-    var selectedMember by remember { mutableStateOf(members.firstOrNull()?.name ?: "Famille") }
-    var paymentMethod by remember { mutableStateOf("Carte") }
-    var isFixed by remember { mutableStateOf(false) }
-    var isEssential by remember { mutableStateOf(true) }
-    var notes by remember { mutableStateOf("") }
+    val isEditing = initialTransaction != null
+
+    var type by remember { mutableStateOf(initialTransaction?.type ?: TransactionType.EXPENSE) }
+    var amountText by remember { mutableStateOf(initialTransaction?.amount?.toString() ?: "") }
+    var description by remember { mutableStateOf(initialTransaction?.description ?: "") }
+    var selectedCategory by remember {
+        mutableStateOf(
+            initialTransaction?.categoryName ?: (categories.firstOrNull { it.type == type }?.name ?: "Courses alimentaires")
+        )
+    }
+    var selectedAccountId by remember { mutableStateOf(initialTransaction?.accountId ?: (accounts.firstOrNull()?.id ?: 1L)) }
+    var selectedTargetAccountId by remember { mutableStateOf(initialTransaction?.targetAccountId ?: (accounts.getOrNull(1)?.id ?: 2L)) }
+    var selectedMember by remember { mutableStateOf(initialTransaction?.memberName ?: (members.firstOrNull()?.name ?: "Famille")) }
+    var paymentMethod by remember { mutableStateOf(initialTransaction?.paymentMethod ?: "Carte") }
+    var isFixed by remember { mutableStateOf(initialTransaction?.isFixed ?: false) }
+    var isEssential by remember { mutableStateOf(initialTransaction?.isEssential ?: true) }
+    var notes by remember { mutableStateOf(initialTransaction?.notes ?: "") }
 
     val filteredCategories = categories.filter { it.type == type }
 
@@ -66,7 +75,7 @@ fun AddTransactionDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Ajouter une transaction",
+                text = if (isEditing) "Modifier la transaction" else "Ajouter une transaction",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -209,6 +218,15 @@ fun AddTransactionDialog(
                         Switch(checked = isEssential, onCheckedChange = { isEssential = it })
                     }
                 }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text("Notes (facultatif)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
             }
         },
         confirmButton = {
@@ -216,26 +234,42 @@ fun AddTransactionDialog(
                 onClick = {
                     val amount = amountText.toDoubleOrNull() ?: 0.0
                     if (amount > 0) {
-                        val tx = Transaction(
-                            type = type,
-                            amount = amount,
-                            dateMillis = System.currentTimeMillis(),
-                            categoryName = if (type == TransactionType.TRANSFER) "Transfert" else selectedCategory,
-                            description = description.ifBlank { selectedCategory },
-                            paymentMethod = paymentMethod,
-                            accountId = selectedAccountId,
-                            targetAccountId = if (type == TransactionType.TRANSFER) selectedTargetAccountId else null,
-                            memberName = selectedMember,
-                            isFixed = isFixed,
-                            isEssential = isEssential,
-                            notes = notes
-                        )
+                        val tx = if (initialTransaction != null) {
+                            initialTransaction.copy(
+                                type = type,
+                                amount = amount,
+                                categoryName = if (type == TransactionType.TRANSFER) "Transfert" else selectedCategory,
+                                description = description.ifBlank { selectedCategory },
+                                paymentMethod = paymentMethod,
+                                accountId = selectedAccountId,
+                                targetAccountId = if (type == TransactionType.TRANSFER) selectedTargetAccountId else null,
+                                memberName = selectedMember,
+                                isFixed = isFixed,
+                                isEssential = isEssential,
+                                notes = notes
+                            )
+                        } else {
+                            Transaction(
+                                type = type,
+                                amount = amount,
+                                dateMillis = System.currentTimeMillis(),
+                                categoryName = if (type == TransactionType.TRANSFER) "Transfert" else selectedCategory,
+                                description = description.ifBlank { selectedCategory },
+                                paymentMethod = paymentMethod,
+                                accountId = selectedAccountId,
+                                targetAccountId = if (type == TransactionType.TRANSFER) selectedTargetAccountId else null,
+                                memberName = selectedMember,
+                                isFixed = isFixed,
+                                isEssential = isEssential,
+                                notes = notes
+                            )
+                        }
                         onConfirm(tx)
                     }
                 },
                 modifier = Modifier.testTag("btn_confirm_add_tx")
             ) {
-                Text("Enregistrer")
+                Text(if (isEditing) "Enregistrer" else "Ajouter")
             }
         },
         dismissButton = {
@@ -247,19 +281,45 @@ fun AddTransactionDialog(
 }
 
 @Composable
-fun AddBillDialog(
+fun AddTransactionDialog(
+    categories: List<Category>,
+    accounts: List<Account>,
+    members: List<HouseholdMember>,
+    onDismiss: () -> Unit,
+    onConfirm: (Transaction) -> Unit
+) {
+    AddEditTransactionDialog(
+        initialTransaction = null,
+        categories = categories,
+        accounts = accounts,
+        members = members,
+        onDismiss = onDismiss,
+        onConfirm = onConfirm
+    )
+}
+
+@Composable
+fun AddEditBillDialog(
+    initialBill: Bill? = null,
     categories: List<Category>,
     onDismiss: () -> Unit,
     onConfirm: (Bill) -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
-    var amountText by remember { mutableStateOf("") }
-    var categoryName by remember { mutableStateOf("Logement ou hypothèque") }
+    val isEditing = initialBill != null
+    var name by remember { mutableStateOf(initialBill?.name ?: "") }
+    var amountText by remember { mutableStateOf(initialBill?.amount?.toString() ?: "") }
+    var categoryName by remember { mutableStateOf(initialBill?.categoryName ?: "Logement ou hypothèque") }
+    var frequency by remember { mutableStateOf(initialBill?.frequency ?: BillFrequency.MONTHLY) }
     var daysUntilDue by remember { mutableStateOf("7") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Ajouter une facture", fontWeight = FontWeight.Bold) },
+        title = {
+            Text(
+                text = if (isEditing) "Modifier la facture" else "Ajouter une facture",
+                fontWeight = FontWeight.Bold
+            )
+        },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(
@@ -280,13 +340,23 @@ fun AddBillDialog(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
-                    value = daysUntilDue,
-                    onValueChange = { daysUntilDue = it },
-                    label = { Text("Échéance dans combien de jours ?") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    value = categoryName,
+                    onValueChange = { categoryName = it },
+                    label = { Text("Catégorie") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
+                if (!isEditing) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = daysUntilDue,
+                        onValueChange = { daysUntilDue = it },
+                        label = { Text("Échéance dans combien de jours ?") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                }
             }
         },
         confirmButton = {
@@ -295,17 +365,27 @@ fun AddBillDialog(
                     val amount = amountText.toDoubleOrNull() ?: 0.0
                     val days = daysUntilDue.toLongOrNull() ?: 7L
                     if (name.isNotBlank() && amount > 0) {
-                        val bill = Bill(
-                            name = name,
-                            amount = amount,
-                            dueDateMillis = System.currentTimeMillis() + (days * 24 * 3600 * 1000L),
-                            categoryName = categoryName
-                        )
+                        val bill = if (initialBill != null) {
+                            initialBill.copy(
+                                name = name,
+                                amount = amount,
+                                categoryName = categoryName,
+                                frequency = frequency
+                            )
+                        } else {
+                            Bill(
+                                name = name,
+                                amount = amount,
+                                dueDateMillis = System.currentTimeMillis() + (days * 24 * 3600 * 1000L),
+                                categoryName = categoryName,
+                                frequency = frequency
+                            )
+                        }
                         onConfirm(bill)
                     }
                 }
             ) {
-                Text("Créer")
+                Text(if (isEditing) "Enregistrer" else "Créer")
             }
         },
         dismissButton = {
@@ -315,18 +395,39 @@ fun AddBillDialog(
 }
 
 @Composable
-fun AddSavingsGoalDialog(
+fun AddBillDialog(
+    categories: List<Category>,
+    onDismiss: () -> Unit,
+    onConfirm: (Bill) -> Unit
+) {
+    AddEditBillDialog(
+        initialBill = null,
+        categories = categories,
+        onDismiss = onDismiss,
+        onConfirm = onConfirm
+    )
+}
+
+@Composable
+fun AddEditSavingsGoalDialog(
+    initialGoal: SavingsGoal? = null,
     onDismiss: () -> Unit,
     onConfirm: (SavingsGoal) -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
-    var targetText by remember { mutableStateOf("") }
-    var initialSavedText by remember { mutableStateOf("0") }
+    val isEditing = initialGoal != null
+    var name by remember { mutableStateOf(initialGoal?.name ?: "") }
+    var targetText by remember { mutableStateOf(initialGoal?.targetAmount?.toString() ?: "") }
+    var currentSavedText by remember { mutableStateOf(initialGoal?.currentAmount?.toString() ?: "0") }
     var targetMonths by remember { mutableStateOf("12") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nouvel objectif d'épargne", fontWeight = FontWeight.Bold) },
+        title = {
+            Text(
+                text = if (isEditing) "Modifier l'objectif d'épargne" else "Nouvel objectif d'épargne",
+                fontWeight = FontWeight.Bold
+            )
+        },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(
@@ -347,42 +448,122 @@ fun AddSavingsGoalDialog(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
-                    value = initialSavedText,
-                    onValueChange = { initialSavedText = it.replace(',', '.') },
-                    label = { Text("Déjà épargné") },
+                    value = currentSavedText,
+                    onValueChange = { currentSavedText = it.replace(',', '.') },
+                    label = { Text("Montant actuellement épargné") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = targetMonths,
-                    onValueChange = { targetMonths = it },
-                    label = { Text("Délai visé (mois)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
+                if (!isEditing) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = targetMonths,
+                        onValueChange = { targetMonths = it },
+                        label = { Text("Délai visé (mois)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                }
             }
         },
         confirmButton = {
             Button(
                 onClick = {
                     val target = targetText.toDoubleOrNull() ?: 0.0
-                    val current = initialSavedText.toDoubleOrNull() ?: 0.0
+                    val current = currentSavedText.toDoubleOrNull() ?: 0.0
                     val months = targetMonths.toLongOrNull() ?: 12L
                     if (name.isNotBlank() && target > 0) {
-                        val goal = SavingsGoal(
-                            name = name,
-                            targetAmount = target,
-                            currentAmount = current,
-                            targetDateMillis = System.currentTimeMillis() + (months * 30L * 24 * 3600 * 1000L)
-                        )
+                        val goal = if (initialGoal != null) {
+                            initialGoal.copy(
+                                name = name,
+                                targetAmount = target,
+                                currentAmount = current
+                            )
+                        } else {
+                            SavingsGoal(
+                                name = name,
+                                targetAmount = target,
+                                currentAmount = current,
+                                targetDateMillis = System.currentTimeMillis() + (months * 30L * 24 * 3600 * 1000L)
+                            )
+                        }
                         onConfirm(goal)
                     }
                 }
             ) {
-                Text("Enregistrer")
+                Text(if (isEditing) "Enregistrer" else "Créer")
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss) { Text("Annuler") }
+        }
+    )
+}
+
+@Composable
+fun AddSavingsGoalDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (SavingsGoal) -> Unit
+) {
+    AddEditSavingsGoalDialog(
+        initialGoal = null,
+        onDismiss = onDismiss,
+        onConfirm = onConfirm
+    )
+}
+
+@Composable
+fun EditBudgetCategoryDialog(
+    categoryName: String,
+    currentAllocated: Double,
+    onDismiss: () -> Unit,
+    onConfirm: (Double) -> Unit,
+    onDelete: () -> Unit
+) {
+    var amountText by remember { mutableStateOf(currentAllocated.toString()) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Modifier le budget : $categoryName",
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text("Ajustez le plafond budgétaire mensuel alloué pour cette catégorie :", style = MaterialTheme.typography.bodySmall)
+                Spacer(modifier = Modifier.height(10.dp))
+                OutlinedTextField(
+                    value = amountText,
+                    onValueChange = { amountText = it.replace(',', '.') },
+                    label = { Text("Montant mensuel alloué") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = onDelete,
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Supprimer")
+                }
+                Button(
+                    onClick = {
+                        val amount = amountText.toDoubleOrNull() ?: 0.0
+                        if (amount >= 0) {
+                            onConfirm(amount)
+                        }
+                    }
+                ) {
+                    Text("Valider")
+                }
             }
         },
         dismissButton = {

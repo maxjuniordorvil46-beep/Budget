@@ -44,6 +44,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -75,11 +78,15 @@ fun DashboardScreen(
     val summary by viewModel.monthlySummary.collectAsStateWithLifecycle()
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
     val transactions by viewModel.transactions.collectAsStateWithLifecycle()
+    val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val members by viewModel.members.collectAsStateWithLifecycle()
     val bills by viewModel.bills.collectAsStateWithLifecycle()
     val savingsGoals by viewModel.savingsGoals.collectAsStateWithLifecycle()
     val debts by viewModel.debts.collectAsStateWithLifecycle()
     val currencySymbol by viewModel.currencySymbol.collectAsStateWithLifecycle()
     val insights by viewModel.advisorInsights.collectAsStateWithLifecycle()
+
+    var transactionToEdit by remember { mutableStateOf<Transaction?>(null) }
 
     val recentTxs = transactions.take(5)
     val upcomingBills = bills.filter { it.status != BillStatus.PAID }.take(3)
@@ -390,6 +397,7 @@ fun DashboardScreen(
                     TransactionItemRow(
                         transaction = tx,
                         currencySymbol = currencySymbol,
+                        onEdit = { transactionToEdit = tx },
                         onDelete = { viewModel.deleteTransaction(tx) }
                     )
                 }
@@ -405,6 +413,20 @@ fun DashboardScreen(
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
                 .testTag("fab_add_transaction")
+        )
+    }
+
+    transactionToEdit?.let { tx ->
+        com.example.ui.components.AddEditTransactionDialog(
+            initialTransaction = tx,
+            categories = categories,
+            accounts = accounts,
+            members = members,
+            onDismiss = { transactionToEdit = null },
+            onConfirm = { updatedTx ->
+                viewModel.updateTransaction(updatedTx)
+                transactionToEdit = null
+            }
         )
     }
 }

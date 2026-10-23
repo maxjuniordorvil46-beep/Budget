@@ -1,6 +1,7 @@
 package com.example.ui.screens.bills
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -54,6 +56,7 @@ import com.example.data.model.Bill
 import com.example.data.model.BillStatus
 import com.example.domain.FinancialCalculations
 import com.example.ui.components.AddBillDialog
+import com.example.ui.components.AddEditBillDialog
 import com.example.ui.viewmodel.BudgetViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -72,6 +75,7 @@ fun BillsScreen(
     var selectedTabIndex by remember { mutableStateOf(0) } // 0: A payer, 1: Payees, 2: Toutes
     var showAddDialog by remember { mutableStateOf(false) }
     var billToPay by remember { mutableStateOf<Bill?>(null) }
+    var billToEdit by remember { mutableStateOf<Bill?>(null) }
 
     val pendingBills = bills.filter { it.status != BillStatus.PAID }
     val paidBills = bills.filter { it.status == BillStatus.PAID }
@@ -178,6 +182,7 @@ fun BillsScreen(
                             bill = bill,
                             currencySymbol = currencySymbol,
                             onPayClicked = { billToPay = bill },
+                            onEdit = { billToEdit = bill },
                             onDelete = { viewModel.deleteBill(bill) }
                         )
                     }
@@ -193,6 +198,18 @@ fun BillsScreen(
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
                 .testTag("fab_add_bill")
+        )
+    }
+
+    billToEdit?.let { bill ->
+        AddEditBillDialog(
+            initialBill = bill,
+            categories = categories,
+            onDismiss = { billToEdit = null },
+            onConfirm = { updatedBill ->
+                viewModel.updateBill(updatedBill)
+                billToEdit = null
+            }
         )
     }
 
@@ -251,6 +268,7 @@ fun BillItemCard(
     bill: Bill,
     currencySymbol: String = "$",
     onPayClicked: () -> Unit,
+    onEdit: (() -> Unit)? = null,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -262,7 +280,8 @@ fun BillItemCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .testTag("bill_item_${bill.id}"),
+            .testTag("bill_item_${bill.id}")
+            .then(if (onEdit != null) Modifier.clickable { onEdit() } else Modifier),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(14.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
@@ -336,6 +355,16 @@ fun BillItemCard(
                             Text("Payer", style = MaterialTheme.typography.labelSmall)
                         }
                         Spacer(modifier = Modifier.width(6.dp))
+                    }
+                    if (onEdit != null) {
+                        IconButton(onClick = onEdit) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Modifier facture",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
                     IconButton(onClick = onDelete) {
                         Icon(

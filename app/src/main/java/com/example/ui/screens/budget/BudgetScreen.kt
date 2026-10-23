@@ -46,8 +46,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.model.TransactionType
+import com.example.domain.CategoryBudgetProgress
 import com.example.domain.FinancialCalculations
 import com.example.ui.components.BudgetProgressCard
+import com.example.ui.components.EditBudgetCategoryDialog
 import com.example.ui.viewmodel.BudgetViewModel
 
 @Composable
@@ -61,6 +63,7 @@ fun BudgetScreen(
     val selectedMonthYear by viewModel.selectedMonthYear.collectAsStateWithLifecycle()
 
     var showAddBudgetDialog by remember { mutableStateOf(false) }
+    var budgetCategoryToEdit by remember { mutableStateOf<CategoryBudgetProgress?>(null) }
 
     val totalAllocated = budgetProgress.sumOf { it.allocatedAmount }
     val totalSpent = budgetProgress.sumOf { it.spentAmount }
@@ -219,7 +222,8 @@ fun BudgetScreen(
                 items(budgetProgress, key = { it.categoryId }) { progress ->
                     BudgetProgressCard(
                         progress = progress,
-                        currencySymbol = currencySymbol
+                        currencySymbol = currencySymbol,
+                        onEdit = { budgetCategoryToEdit = progress }
                     )
                 }
             }
@@ -233,6 +237,22 @@ fun BudgetScreen(
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
                 .testTag("fab_set_budget")
+        )
+    }
+
+    budgetCategoryToEdit?.let { bCat ->
+        EditBudgetCategoryDialog(
+            categoryName = bCat.categoryName,
+            currentAllocated = bCat.allocatedAmount,
+            onDismiss = { budgetCategoryToEdit = null },
+            onConfirm = { newAmount ->
+                viewModel.addOrUpdateBudgetCategory(bCat.categoryId, bCat.categoryName, newAmount)
+                budgetCategoryToEdit = null
+            },
+            onDelete = {
+                viewModel.deleteBudgetCategoryByCategoryId(bCat.categoryId)
+                budgetCategoryToEdit = null
+            }
         )
     }
 

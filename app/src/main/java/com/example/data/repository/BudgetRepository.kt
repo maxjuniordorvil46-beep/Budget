@@ -73,6 +73,31 @@ class BudgetRepository(private val db: AppDatabase) {
         }
     }
 
+    suspend fun updateTransaction(transaction: Transaction) {
+        val oldTx = db.transactionDao().getTransactionById(transaction.id)
+        if (oldTx != null) {
+            // Reverse old transaction impact
+            when (oldTx.type) {
+                TransactionType.INCOME -> db.accountDao().adjustBalance(oldTx.accountId, -oldTx.amount)
+                TransactionType.EXPENSE -> db.accountDao().adjustBalance(oldTx.accountId, oldTx.amount)
+                TransactionType.TRANSFER -> {
+                    db.accountDao().adjustBalance(oldTx.accountId, oldTx.amount)
+                    oldTx.targetAccountId?.let { db.accountDao().adjustBalance(it, -oldTx.amount) }
+                }
+            }
+        }
+        // Apply new transaction impact
+        when (transaction.type) {
+            TransactionType.INCOME -> db.accountDao().adjustBalance(transaction.accountId, transaction.amount)
+            TransactionType.EXPENSE -> db.accountDao().adjustBalance(transaction.accountId, -transaction.amount)
+            TransactionType.TRANSFER -> {
+                db.accountDao().adjustBalance(transaction.accountId, -transaction.amount)
+                transaction.targetAccountId?.let { db.accountDao().adjustBalance(it, transaction.amount) }
+            }
+        }
+        db.transactionDao().updateTransaction(transaction)
+    }
+
     // Categories
     val allCategories: Flow<List<Category>> = db.categoryDao().getAllCategories()
     fun getCategoriesByType(type: TransactionType): Flow<List<Category>> = db.categoryDao().getCategoriesByType(type)
@@ -88,6 +113,9 @@ class BudgetRepository(private val db: AppDatabase) {
 
     suspend fun insertBudgetCategories(list: List<BudgetCategory>) =
         db.budgetDao().insertBudgetCategories(list)
+
+    suspend fun deleteBudgetCategoryByCategoryId(monthYear: String, categoryId: Long) =
+        db.budgetDao().deleteBudgetCategoryByCategoryId(monthYear, categoryId)
 
     suspend fun clearBudgetForMonth(monthYear: String) =
         db.budgetDao().clearBudgetForMonth(monthYear)

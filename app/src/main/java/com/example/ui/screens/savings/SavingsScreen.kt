@@ -1,6 +1,7 @@
 package com.example.ui.screens.savings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +22,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.AlertDialog
@@ -54,6 +56,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.model.Account
 import com.example.data.model.SavingsGoal
 import com.example.domain.FinancialCalculations
+import com.example.ui.components.AddEditSavingsGoalDialog
 import com.example.ui.components.AddSavingsGoalDialog
 import com.example.ui.viewmodel.BudgetViewModel
 import java.text.SimpleDateFormat
@@ -71,6 +74,7 @@ fun SavingsScreen(
 
     var showAddGoalDialog by remember { mutableStateOf(false) }
     var goalForContribution by remember { mutableStateOf<SavingsGoal?>(null) }
+    var goalToEdit by remember { mutableStateOf<SavingsGoal?>(null) }
     var isWithdrawalMode by remember { mutableStateOf(false) }
 
     val totalSaved = goals.sumOf { it.currentAmount }
@@ -164,6 +168,7 @@ fun SavingsScreen(
                             goalForContribution = goal
                             isWithdrawalMode = true
                         },
+                        onEdit = { goalToEdit = goal },
                         onDelete = { viewModel.deleteSavingsGoal(goal) }
                     )
                 }
@@ -178,6 +183,17 @@ fun SavingsScreen(
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
                 .testTag("fab_add_savings_goal")
+        )
+    }
+
+    goalToEdit?.let { goal ->
+        AddEditSavingsGoalDialog(
+            initialGoal = goal,
+            onDismiss = { goalToEdit = null },
+            onConfirm = { updatedGoal ->
+                viewModel.updateSavingsGoal(updatedGoal)
+                goalToEdit = null
+            }
         )
     }
 
@@ -266,6 +282,7 @@ fun SavingsGoalCard(
     currencySymbol: String = "$",
     onContribute: () -> Unit,
     onWithdraw: () -> Unit,
+    onEdit: (() -> Unit)? = null,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -278,7 +295,8 @@ fun SavingsGoalCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .testTag("savings_goal_${goal.id}"),
+            .testTag("savings_goal_${goal.id}")
+            .then(if (onEdit != null) Modifier.clickable { onEdit() } else Modifier),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -378,7 +396,7 @@ fun SavingsGoalCard(
                 ) {
                     Text("Retirer", style = MaterialTheme.typography.labelSmall)
                 }
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(6.dp))
                 Button(
                     onClick = onContribute,
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
@@ -386,7 +404,17 @@ fun SavingsGoalCard(
                 ) {
                     Text("+ Contribuer", style = MaterialTheme.typography.labelSmall)
                 }
-                Spacer(modifier = Modifier.width(6.dp))
+                if (onEdit != null) {
+                    Spacer(modifier = Modifier.width(4.dp))
+                    IconButton(onClick = onEdit) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Modifier objectif",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
                 IconButton(onClick = onDelete) {
                     Icon(
                         imageVector = Icons.Default.Delete,

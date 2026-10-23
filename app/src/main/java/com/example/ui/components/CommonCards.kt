@@ -1,6 +1,7 @@
 package com.example.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.filled.ChildCare
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.MoreHoriz
@@ -167,6 +169,7 @@ fun StatCard(
 fun TransactionItemRow(
     transaction: Transaction,
     currencySymbol: String = "$",
+    onEdit: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
@@ -182,7 +185,8 @@ fun TransactionItemRow(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .testTag("transaction_item_${transaction.id}"),
+            .testTag("transaction_item_${transaction.id}")
+            .then(if (onEdit != null) Modifier.clickable { onEdit() } else Modifier),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
@@ -260,6 +264,20 @@ fun TransactionItemRow(
                 }
             }
 
+            if (onEdit != null) {
+                IconButton(
+                    onClick = onEdit,
+                    modifier = Modifier.testTag("edit_tx_${transaction.id}")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Modifier la transaction",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+
             if (onDelete != null) {
                 IconButton(
                     onClick = onDelete,
@@ -269,7 +287,7 @@ fun TransactionItemRow(
                         imageVector = Icons.Default.Delete,
                         contentDescription = "Supprimer la transaction",
                         tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
@@ -281,6 +299,7 @@ fun TransactionItemRow(
 fun BudgetProgressCard(
     progress: CategoryBudgetProgress,
     currencySymbol: String = "$",
+    onEdit: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val progressFraction = (progress.percentageUsed / 100.0).toFloat().coerceIn(0f, 1f)
@@ -293,7 +312,8 @@ fun BudgetProgressCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .testTag("budget_progress_${progress.categoryId}"),
+            .testTag("budget_progress_${progress.categoryId}")
+            .then(if (onEdit != null) Modifier.clickable { onEdit() } else Modifier),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
@@ -325,12 +345,23 @@ fun BudgetProgressCard(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
-                Text(
-                    text = "${progress.percentageUsed.toInt()}%",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = indicatorColor
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "${progress.percentageUsed.toInt()}%",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = indicatorColor
+                    )
+                    if (onEdit != null) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Modifier le budget",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
